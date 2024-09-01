@@ -2,8 +2,8 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const { initializeClient } = require('./src/config/client');
 const { saveAssignments, loadAssignments, scheduleTaskReminders, scheduleMotivationalQuotes } = require('./src/reminders/reminders');
 const { getWeather } = require('./src/commands/handlers');
-const axios = require('axios');
 const { scheduleClassReminders } = require('./src/reminders/jadwal');
+const { checkForUpdates } = require('./src/commands/KalenderAkademik');
 
 class WhatsAppBot {
     constructor() {
@@ -26,6 +26,15 @@ class WhatsAppBot {
         this.userStates = {};
 
         initializeClient(this.client, this);
+
+        // Mulai pengecekan pembaruan setiap 10 menit
+        setInterval(() => {
+            try {
+                checkForUpdates(this); // Pastikan 'this' merujuk pada botInstance yang benar
+            } catch (error) {
+                console.error('Error during update check:', error.message);
+            }
+        }, 10 * 60 * 1000); // 10 menit
     }
 
     saveAssignments() {
@@ -45,15 +54,13 @@ class WhatsAppBot {
     }
 
     getWeather() {
-		getWeather(this);
-	}
-	 scheduleClassReminders() {
-		scheduleClassReminders(this)
-	}
-	sendAcademicCalendar(){
-		sendAcademicCalendar(this)
-	}
-	 
+        getWeather(this);
+    }
+
+    scheduleClassReminders() {
+        scheduleClassReminders(this);
+    }
 }
 
+// Mulai bot
 new WhatsAppBot();

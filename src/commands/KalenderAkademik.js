@@ -1,5 +1,8 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+
+let previousEvents = [];
 
 async function getAcademicCalendar() {
     try {
@@ -30,4 +33,27 @@ async function getAcademicCalendar() {
     }
 }
 
-module.exports = { getAcademicCalendar };
+async function checkForUpdates(botInstance) {
+    const currentEvents = await getAcademicCalendar();
+    const newEvents = currentEvents.filter(event => !previousEvents.some(prevEvent => 
+        prevEvent.tanggalAwal === event.tanggalAwal && 
+        prevEvent.tanggalAkhir === event.tanggalAkhir && 
+        prevEvent.kegiatan === event.kegiatan &&
+        prevEvent.semester === event.semester &&
+        prevEvent.penugasan === event.penugasan
+    ));
+
+    if (newEvents.length > 0) {
+        previousEvents = currentEvents; // Update the previous events
+        let message = 'Update baru pada Kalender Akademik:\n';
+        newEvents.forEach(event => {
+            message += `- ${event.kegiatan} ( ${event.tanggalAwal} - ${event.tanggalAkhir} )\n`;
+        });
+
+        // Kirim pesan ke grup WhatsApp
+        const groupId = '120363153297388849@g.us'; // Ganti dengan ID grup Anda
+        botInstance.client.sendMessage(groupId, message);
+    }
+}
+
+module.exports = { checkForUpdates };
