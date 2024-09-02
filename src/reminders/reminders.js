@@ -48,8 +48,14 @@ function removeOverdueTasks(botInstance) {
     saveAssignments(botInstance);
 }
 
+let intervalId;
+
 function scheduleMotivationalQuotes(botInstance) {
-    setInterval(async () => {
+    if (intervalId) {
+        clearInterval(intervalId); // Hentikan interval yang berjalan
+    }
+
+    intervalId = setInterval(async () => {
         const groupId = '120363153297388849@g.us';
         const randomName = nama[Math.floor(Math.random() * nama.length)];
         const randomQuote = kataMotivasi[Math.floor(Math.random() * kataMotivasi.length)].replace('{nama}', randomName);
@@ -62,8 +68,9 @@ function scheduleMotivationalQuotes(botInstance) {
         } catch (error) {
             console.error("Failed to send motivational quote or sticker:", error.message);
         }
-    }, 6 * 60 * 60 * 1000); // Setiap 12 jam
+    }, 6 * 60 * 60 * 1000); // Setiap 6 jam
 }
+
 
 async function sendSticker(groupId, botInstance) {
     const imagePath = path.join(__dirname, '../assets/stiker.png');
