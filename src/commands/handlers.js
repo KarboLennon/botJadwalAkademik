@@ -2,6 +2,7 @@ const moment = require('moment-timezone');
 const { parseDate, translateWeatherCondition } = require('../utils/utils');
 const { notifyOverdueAssignment, sendMotivationWithSticker, removeOverdueTasks, loadAssignments, saveAssignments } = require('../reminders/reminders');
 const { getAcademicCalendar } = require('../commands/KalenderAkademik');
+const axios = require('axios');
 
 async function handleMessage(message, botInstance) {
     const chatId = message.from;
@@ -246,6 +247,25 @@ async function sendAcademicCalendar(message, botInstance) {
     }
 }
 
+async function getWeather() {
+    try {
+        const apiKey = '317457e05859404c814170051243007'; 
+        const lat = '-6.346497102263792';
+        const lon = '106.69157422953396';
+        const response = await axios.get('http://api.weatherapi.com/v1/current.json', {
+            params: {
+                key: apiKey,
+                q: `${lat},${lon}`,
+                lang: 'id'
+            }
+        });
+        const weather = response.data;
+        const weatherCondition = translateWeatherCondition(weather.current.condition.text); // Perbaikan pada penggunaan `this`
+        return `Cuaca di UNPAM saat ini : ${weatherCondition}\nSuhu: ${weather.current.temp_c}°C\nKelembapan: ${weather.current.humidity}%\nKecepatan Angin: ${weather.current.wind_kph} kph`;
+    } catch (error) {
+        console.error('Failed to get weather data:', error.message);
+        return 'Gagal mendapatkan data cuaca.';
+    }
+}
 
-
-module.exports = { handleMessage, sendMotivationWithSticker, listAssignments, removeOverdueTasks };
+module.exports = { handleMessage, sendMotivationWithSticker, listAssignments, removeOverdueTasks, getWeather };

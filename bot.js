@@ -5,6 +5,7 @@ const { getWeather, handleMessage } = require('./src/commands/handlers');
 const { scheduleClassReminders } = require('./src/reminders/jadwal');
 const { checkForUpdates } = require('./src/commands/KalenderAkademik');
 
+
 class WhatsAppBot {
     constructor() {
         this.client = new Client({
