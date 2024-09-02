@@ -1,12 +1,6 @@
 const moment = require('moment-timezone');
-const fs = require('fs');
-const axios = require('axios');
-const path = require('path');
-const sharp = require('sharp');
-const { MessageMedia } = require('whatsapp-web.js');
 const { parseDate, translateWeatherCondition } = require('../utils/utils');
-const { handleTaskDeletion, notifyOverdueAssignment } = require('../reminders/reminders');
-const { kataKakGem } = require('../commands/kata'); 
+const { notifyOverdueAssignment, sendMotivationWithSticker, removeOverdueTasks, loadAssignments, saveAssignments } = require('../reminders/reminders');
 const { getAcademicCalendar } = require('../commands/KalenderAkademik');
 
 async function handleMessage(message, botInstance) {
@@ -18,6 +12,13 @@ async function handleMessage(message, botInstance) {
     }
 
     const userState = botInstance.userStates[chatId];
+    const messageBody = message.body.trim();
+
+    // Handle !delete command separately
+    if (messageBody.startsWith('!delete')) {
+        await handleTaskDeletion(message, botInstance);
+        return;
+    }
 
     switch (userState.stage) {
         case 0:
@@ -44,7 +45,7 @@ async function handleMessage(message, botInstance) {
 
 // Handle the initial stage of user input
 async function handleInitialStage(message, userState, botInstance) {
-    switch (message.body) {
+    switch (message.body.trim()) {
         case '!add':
             const courseList = botInstance.courses.map((course, index) => `${index + 1}. ${course}`).join('\n');
             message.reply(`Mata kuliah nomor berapa yang ingin anda tambahkan?\n0. Batalkan\n${courseList}`);
@@ -52,9 +53,6 @@ async function handleInitialStage(message, userState, botInstance) {
             break;
         case '!list':
             await listAssignments(botInstance, message);
-            break;
-        case '!delete ':
-            await handleTaskDeletion(message, botInstance);
             break;
         case '!cuaca':
             const weather = await getWeather();
@@ -68,15 +66,40 @@ async function handleInitialStage(message, userState, botInstance) {
             userState.stage = 4;
             userState.data = {}; // Reset data
             break;
-		case '!akademik':
+        case '!akademik':
             await sendAcademicCalendar(message, botInstance);
             break;
     }
 }
 
-// Handle course selection input
+async function handleTaskDeletion(message, botInstance) {
+    const input = message.body.trim(); // Menghapus spasi ekstra
+    const command = "!delete";
+    
+    // Pastikan input dimulai dengan perintah '!delete'
+    if (input.startsWith(command)) {
+        const taskNumber = parseInt(input.slice(command.length).trim()) - 1; // Ambil angka setelah '!delete' dan konversi ke indeks
+        if (!isNaN(taskNumber) && taskNumber >= 0 && taskNumber < botInstance.assignments.length) {
+            const deletedTask = botInstance.assignments.splice(taskNumber, 1);
+            message.reply(`Tugas berhasil dihapus: ${deletedTask[0].name}`);
+            botInstance.saveAssignments(); 
+            botInstance.scheduleTaskReminders(); 
+        } else {
+            message.reply('Nomor tugas tidak valid.');
+        }
+    }
+}
+
+// Function to handle course selection
 async function handleCourseSelection(message, userState, botInstance) {
     const courseIndex = parseInt(message.body) - 1;
+
+    if (message.body === '0') {
+        message.reply('Proses penambahan tugas dibatalkan.');
+        botInstance.userStates[message.from] = { stage: 0, data: {} }; // Reset state
+        return;
+    }
+
     if (!isNaN(courseIndex) && courseIndex >= 0 && courseIndex < botInstance.courses.length) {
         userState.data.subject = botInstance.courses[courseIndex];
         message.reply('Masukan nama tugas\n0. Batalkan');
@@ -97,6 +120,7 @@ async function handleTaskName(message, userState) {
         userState.stage = 3;
     }
 }
+
 // Handle deadline input and final task creation
 async function handleDeadline(message, userState, botInstance) {
     if (message.body === '0') {
@@ -105,7 +129,7 @@ async function handleDeadline(message, userState, botInstance) {
     } else {
         const deadline = parseDate(message.body);
         if (deadline) {
-            userState.data.deadline = deadline;
+            userState.data.deadline = deadline.toISOString(); // Simpan sebagai string ISO
             botInstance.assignments.push(userState.data);
             message.reply(`Tugas ${userState.data.subject} berhasil ditambahkan: ${userState.data.name} (Deadline: ${deadline.format('DD-MM-YYYY HH:mm')})`);
             botInstance.userStates[message.from] = { stage: 0, data: {} }; // Reset state
@@ -128,30 +152,44 @@ async function handleKelompokInput(message, userState, botInstance) {
     }
 
     if (!userState.data.participants) {
-        if (input <= 0 || input > 40) {
-            message.reply('Jumlah peserta maksimal adalah 40.');
+        if (input <= 0 || input > 36) {
+            message.reply('Jumlah peserta kebanyakan.');
             botInstance.userStates[message.from] = { stage: 0, data: {} }; // stop proses
             return;
         }
         userState.data.participants = input;
-        message.reply('Masukkan jumlah kelompok :');
+        message.reply('Masukkan jumlah kelompok:');
     } else if (!userState.data.groups) {
         if (input <= 0 || input > 20 || input > userState.data.participants) {
-            message.reply('jumlah kelompok ngga masuk akal, silahkan ulangi.');
+            message.reply('Jumlah kelompok tidak masuk akal, silahkan ulangi.');
             botInstance.userStates[message.from] = { stage: 0, data: {} }; // Reset state and stop process
             return;
         }
         userState.data.groups = input;
 
         const groupAssignments = createGroups(userState.data.participants, userState.data.groups);
+        const icons = [
+            '🐱', '🐶', '🦁', '🐯', '🐰', '🐸', '🐼', '🐻', '🐷', '🐨',
+            '🦄', '🐥', '🐉', '🐳', '🐙', '🐊', '🐧', '🦋', '🐢', '🐍',
+            '🐸', '🐲', '🐎', '🐏', '🐑', '🐪', '🐫', '🐘', '🦏', '🦍',
+            '🦒', '🦓', '🦔', '🦦', '🦧', '🦥'
+        ];
+
+        // Randomize icon assignment
+        shuffleArray(icons);
+
         let response = 'Pembagian kelompok:\n\n';
+        let iconIndex = 0;
+
         groupAssignments.forEach((group, index) => {
             response += `Kelompok ${index + 1}\n`;
-            group.forEach(participant => {
-                response += `Absen Nomor urut ${participant}\n`;
+            group.forEach((participant) => {
+                const icon = icons[iconIndex++ % icons.length]; // Pastikan ikon berbeda untuk setiap peserta
+                response += `${icon} Absen Nomor urut ${participant}\n`;
             });
             response += '\n';
         });
+
         message.reply(response);
 
         botInstance.userStates[message.from] = { stage: 0, data: {} }; 
@@ -173,7 +211,7 @@ function createGroups(participants, groups) {
     return groupAssignments;
 }
 
-// mengacak kelompok menggunakan algoritma Fisher-Yates
+// mengacak array menggunakan algoritma Fisher-Yates
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -181,65 +219,19 @@ function shuffleArray(array) {
     }
 }
 
-// Send a motivational message along with a sticker
-async function sendMotivationWithSticker(message, botInstance) {
-    const chatId = message.from;
-
-    // Select a random motivational phrase
-    const randomIndex = Math.floor(Math.random() * kataKakGem.length);
-    const selectedMotivation = kataKakGem[randomIndex];
-
-    // Send the motivational message
-    await botInstance.client.sendMessage(chatId, selectedMotivation);
-
-    // Path to the image to be converted into a sticker
-    const imagePath = path.join(__dirname, '../assets/stiker.png');
-    const webpPath = path.join(__dirname, '../assets/stiker.webp');
-
-    // Convert the image to webp using sharp
-    await sharp(imagePath)
-        .resize(512, 512) 
-        .toFormat('webp')
-        .toFile(webpPath);
-
-    const media = MessageMedia.fromFilePath(webpPath);
-
-    // Send the sticker
-    await botInstance.client.sendMessage(chatId, media, { sendMediaAsSticker: true });
-
-    // Delete the temporary file after sending
-    fs.unlinkSync(webpPath);
-}
-
-// Retrieve the current weather
-async function getWeather() {
-    try {
-        const apiKey = '317457e05859404c814170051243007'; // Replace with your API key
-        const lat = '-6.346053';
-        const lon = '106.691657';
-        const response = await axios.get(`http://api.weatherapi.com/v1/forecast.json`, {
-            params: {
-                key: apiKey,
-                q: `${lat},${lon}`,
-                lang: 'id',
-            }
+async function listAssignments(botInstance, message) {
+    if (botInstance.assignments.length === 0) {
+        message.reply('Tidak ada tugas yang terdaftar.');
+    } else {
+        let response = '📋 Daftar Tugas:\n\n';
+        botInstance.assignments.forEach((assignment, index) => {
+            const deadline = moment(assignment.deadline).tz('Asia/Jakarta'); // Pastikan timezone benar
+            response += `${index + 1}. ${assignment.subject}\n   - Nama: ${assignment.name}\n   - Deadline: ${deadline.format('DD-MM-YYYY HH:mm')}\n\n`;
         });
-
-        const currentWeather = response.data.current;
-
-        // Translate the weather condition to the local language
-        const currentCondition = translateWeatherCondition(currentWeather.condition.text);
-
-        console.log(`Kondisi saat ini: ${currentWeather.condition.text}`);
-        console.log("Terjemahan kondisi saat ini:\n", currentCondition);
-
-        return `Cuaca di UNPAM saat ini: ${currentCondition}\nSuhu: ${currentWeather.temp_c}°C\nKelembapan: ${currentWeather.humidity}%\nKecepatan Angin: ${currentWeather.wind_kph} kph\nPAHAM!`;
-    } catch (error) {
-        console.error('Failed to get weather data:', error.message);
-        return 'Gagal mendapatkan data cuaca.';
+        message.reply(response);
     }
 }
-// handle kalender akademik
+
 async function sendAcademicCalendar(message, botInstance) {
     const events = await getAcademicCalendar();
 
@@ -254,4 +246,6 @@ async function sendAcademicCalendar(message, botInstance) {
     }
 }
 
-module.exports = { handleMessage, sendMotivationWithSticker };
+
+
+module.exports = { handleMessage, sendMotivationWithSticker, listAssignments, removeOverdueTasks };

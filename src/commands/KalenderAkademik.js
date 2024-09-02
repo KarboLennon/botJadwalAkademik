@@ -45,9 +45,12 @@ async function checkForUpdates(botInstance) {
 
     if (newEvents.length > 0) {
         previousEvents = currentEvents; // Update the previous events
-        let message = 'Update baru pada Kalender Akademik:\n';
-        newEvents.forEach(event => {
-            message += `- ${event.kegiatan} ( ${event.tanggalAwal} - ${event.tanggalAkhir} )\n`;
+        let message = '📅 *Update baru pada Kalender Akademik:*\n\n';
+        const icons = ['📌', '🎓', '📘', '📅', '🔔', '📖']; // Beberapa ikon yang dapat digunakan
+
+        newEvents.forEach((event, index) => {
+            const icon = icons[index % icons.length]; // Gunakan ikon yang berbeda untuk setiap acara
+            message += `${icon} *${event.kegiatan}* (${event.tanggalAwal} - ${event.tanggalAkhir})\n\n`;
         });
 
         // Kirim pesan ke grup WhatsApp
@@ -56,4 +59,5 @@ async function checkForUpdates(botInstance) {
     }
 }
 
-module.exports = { checkForUpdates };
+
+module.exports = { getAcademicCalendar , checkForUpdates  };
