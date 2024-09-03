@@ -110,9 +110,14 @@ const kataKakGem = [
     "Kata-kata hari ini, Kebahagiaan tidak ditemukan di ujung jalan, tapi di sepanjang perjalanan."
 ];
 
+<<<<<<< HEAD
 const kataJorok = ['anjing', 'kontol', 'memek', 'bangsat', 'tai', 'ngentot', 'ngentod', 'babi', 'asu', 'fak', 'fuck', 'puki', 'cuki', 'pepek', 'bokep',
 'ktl','ppk','anj','mampus','ewe','bgst','anying','mmk','anjir','ajg','ewean','mamfus','peler','titit','itil','k0nt0l','kuontol',
 'k0ntol','kont0l','memeg','memex','muemek'];
 
 
 module.exports = { kataMotivasi, nama, kataKakGem, kataJorok };
+=======
+
+module.exports = { kataMotivasi, nama, kataKakGem };
+>>>>>>> a7728c0f2b860168002751faa763ecafc73aec24

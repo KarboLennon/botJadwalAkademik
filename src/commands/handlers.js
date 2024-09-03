@@ -3,10 +3,15 @@ const { parseDate, translateWeatherCondition } = require('../utils/utils');
 const { notifyOverdueAssignment, sendMotivationWithSticker, removeOverdueTasks, loadAssignments, saveAssignments } = require('../reminders/reminders');
 const { getAcademicCalendar } = require('../commands/KalenderAkademik');
 const axios = require('axios');
+<<<<<<< HEAD
 const { kataJorok } = require('../commands/kata');
 
 async function handleMessage(message, botInstance) {
 	const startTime = Date.now();
+=======
+
+async function handleMessage(message, botInstance) {
+>>>>>>> a7728c0f2b860168002751faa763ecafc73aec24
     const chatId = message.from;
 
     // Initialize user state if not already initialized
@@ -44,6 +49,7 @@ async function handleMessage(message, botInstance) {
             message.reply('Terjadi kesalahan. Mulai dari awal dengan mengetikkan !add');
             break;
     }
+<<<<<<< HEAD
 	const endTime = Date.now(); // Catat waktu setelah command selesai diproses
     const responseTime = endTime - startTime; // Hitung waktu respon dalam ms
 
@@ -61,6 +67,8 @@ async function handleMessage(message, botInstance) {
             console.error("Gagal menghapus pesan:", error.message);
         }
     }
+=======
+>>>>>>> a7728c0f2b860168002751faa763ecafc73aec24
 }
 
 // Handle the initial stage of user input
@@ -95,6 +103,22 @@ async function handleInitialStage(message, userState, botInstance) {
 async function handleTaskDeletion(message, botInstance) {
     const input = message.body.trim(); // Menghapus spasi ekstra
     const command = "!delete";
+<<<<<<< HEAD
+=======
+    
+    // Pastikan input dimulai dengan perintah '!delete'
+    if (input.startsWith(command)) {
+        const taskNumber = parseInt(input.slice(command.length).trim()) - 1; // Ambil angka setelah '!delete' dan konversi ke indeks
+        if (!isNaN(taskNumber) && taskNumber >= 0 && taskNumber < botInstance.assignments.length) {
+            const deletedTask = botInstance.assignments.splice(taskNumber, 1);
+            message.reply(`Tugas berhasil dihapus: ${deletedTask[0].name}`);
+            botInstance.saveAssignments(); 
+            botInstance.scheduleTaskReminders(); 
+        } else {
+            message.reply('Nomor tugas tidak valid.');
+        }
+    }
+>>>>>>> a7728c0f2b860168002751faa763ecafc73aec24
 }
 
 // Function to handle course selection
@@ -273,6 +297,7 @@ async function getWeather() {
         return 'Gagal mendapatkan data cuaca.';
     }
 }
+<<<<<<< HEAD
 function containsBadWord(message) {
     const lowercasedMessage = message.toLowerCase();
     return kataJorok.some(badWord => {
@@ -285,5 +310,7 @@ function containsBadWord(message) {
         return regex.test(lowercasedMessage);
     });
 }
+=======
+>>>>>>> a7728c0f2b860168002751faa763ecafc73aec24
 
 module.exports = { handleMessage, sendMotivationWithSticker, listAssignments, removeOverdueTasks, getWeather };
