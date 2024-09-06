@@ -177,17 +177,10 @@ async function schedulePrayerNotifications(botInstance) {
 async function sendMotivationWithSticker(botInstance) {
     try {
         const randomQuote = kataKakGem[Math.floor(Math.random() * kataKakGem.length)];
-<<<<<<< HEAD
         const groupId = '120363153297388849@g.us'; // Ganti dengan ID grup yang sesuai
 
         await botInstance.client.sendMessage(groupId, randomQuote);
         await sendSticker(groupId, botInstance);
-=======
-        const chat = await botInstance.client.getChats();
-        const activeChat = chat[0];
-        await botInstance.client.sendMessage(activeChat.id._serialized, randomQuote);
-        await sendSticker(activeChat.id._serialized, botInstance);
->>>>>>> a7728c0f2b860168002751faa763ecafc73aec24
 
         console.log(`[${moment().format('HH:mm:ss')}] Kata motivasi dengan stiker - sukses`);
     } catch (error) {
@@ -196,10 +189,6 @@ async function sendMotivationWithSticker(botInstance) {
 }
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> a7728c0f2b860168002751faa763ecafc73aec24
 module.exports = {
     loadAssignments,
     saveAssignments,

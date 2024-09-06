@@ -45,7 +45,7 @@ class WhatsAppBot {
             } catch (error) {
                 console.error('Error during update check:', error.message);
             }
-        }, 24 * 60 * 60 * 1000); // 10 menit
+        }, 1200000); // cek 20 menit sekali
     }
 
     saveAssignments() {
