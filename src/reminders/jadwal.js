@@ -1,5 +1,6 @@
 const moment = require('moment-timezone');
 
+// Jadwal kelas
 const schedule = [
     {
         subject: 'Struktur Data',
@@ -59,10 +60,10 @@ const schedule = [
     },
 ];
 
+// Fungsi untuk menjadwalkan pengingat kelas
 async function scheduleClassReminders(botInstance) {
+    // Grouping jadwal berdasarkan hari
     const groupedSchedule = {};
-
-    // Group classes by day
     schedule.forEach(classInfo => {
         if (!groupedSchedule[classInfo.day]) {
             groupedSchedule[classInfo.day] = [];
@@ -70,28 +71,40 @@ async function scheduleClassReminders(botInstance) {
         groupedSchedule[classInfo.day].push(classInfo);
     });
 
-    // Schedule reminders for each day
+    // Penjadwalan pengingat untuk setiap hari
     Object.keys(groupedSchedule).forEach(day => {
         const classes = groupedSchedule[day];
-        const startDate = moment.tz(classes[0].startDate, 'YYYY-MM-DD', 'Asia/Jakarta');
-        const endDate = moment.tz(classes[0].endDate, 'YYYY-MM-DD', 'Asia/Jakarta');
 
-        while (startDate.isBefore(endDate)) {
-            const reminderTime = moment.tz(`${day} ${classes[0].time.split(' - ')[0]}`, 'dddd HH:mm', 'Asia/Jakarta').subtract(6, 'hours');
-            const now = moment.tz('Asia/Jakarta');
+        // Ambil timezone dan waktu sekarang
+        const now = moment.tz('Asia/Jakarta');
 
-            if (reminderTime.isAfter(now)) {
-                const delay = reminderTime.diff(now);
+        // Jadwalkan pengingat untuk setiap kelas
+        classes.forEach(classInfo => {
+            const classStartTime = moment.tz(`${classInfo.startDate} ${classInfo.time.split(' - ')[0]}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
+            
+            // Mengecek apakah kelas sudah berakhir
+            const classEndDate = moment.tz(classInfo.endDate, 'YYYY-MM-DD', 'Asia/Jakarta');
+            if (now.isAfter(classEndDate)) {
+                return; // Lewati kelas jika sudah berakhir
+            }
 
+            // Pengingat dikirimkan 6 jam sebelum kelas dimulai
+            const reminderTime = classStartTime.clone().subtract(6, 'hours');
+            const delay = reminderTime.diff(now);
+
+            // Jika reminderTime setelah waktu saat ini, jadwalkan pengiriman pesan
+            if (delay > 0) {
                 setTimeout(async () => {
                     try {
-                        const groupId = '120363153297388849@g.us';
-                        let message = `jadwal mata kuliah hari ini :\n`;
+                        const groupId = '120363153297388849@g.us'; // Ganti dengan ID grup yang benar
+                        let message = `Jadwal mata kuliah hari ini:\n`;
 
-                        classes.forEach(classInfo => {
-                            message += `\n- ${classInfo.subject}: pukul ${classInfo.time}`;
+                        // Loop setiap kelas pada hari tersebut dan tambahkan ke pesan
+                        classes.forEach(classDetail => {
+                            message += `\n- ${classDetail.subject}: pukul ${classDetail.time}`;
                         });
 
+                        // Kirim pesan ke grup
                         await botInstance.client.sendMessage(groupId, message);
                         console.log(`[${moment().format('HH:mm:ss')}] Reminder for classes on ${day} - sukses`);
                     } catch (error) {
@@ -99,10 +112,7 @@ async function scheduleClassReminders(botInstance) {
                     }
                 }, delay);
             }
-
-            // Move to the next week
-            startDate.add(1, 'week');
-        }
+        });
     });
 }
 

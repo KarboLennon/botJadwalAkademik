@@ -142,38 +142,6 @@ function clearExistingIntervals() {
     }
 }
 
-async function schedulePrayerNotifications(botInstance) {
-    try {
-        const timings = await getPrayerTimes();
-        const prayerMap = {
-            Fajr: 'Subuh',
-            Dhuhr: 'Dzuhur',
-            Asr: 'Ashar',
-            Maghrib: 'Maghrib',
-            Isha: 'Isya',
-        };
-        const currentDate = moment.tz('Asia/Jakarta');
-
-        for (const [key, prayerTime] of Object.entries(prayerMap)) {
-            const [hour, minute] = timings[key].split(':');
-            const prayerMoment = moment.tz(`${hour}:${minute}`, 'HH:mm', 'Asia/Jakarta');
-            const delay = prayerMoment.diff(currentDate);
-
-            if (delay > 0) {
-                setTimeout(async () => {
-                    try {
-                        const groupId = '120363153297388849@g.us';
-                        await botInstance.client.sendMessage(groupId, `Waktu shalat ${prayerTime} telah tiba, sesibuk apapun kalian, jangan tinggalkan shalat 5 waktu.`);
-                    } catch (error) {
-                        console.error(`Failed to send message for ${prayerTime}:`, error.message);
-                    }
-                }, delay);
-            }
-        }
-    } catch (error) {
-        console.error('Failed to schedule prayer notifications:', error.message);
-    }
-}
 async function sendMotivationWithSticker(botInstance) {
     try {
         const randomQuote = kataKakGem[Math.floor(Math.random() * kataKakGem.length)];
@@ -188,15 +156,54 @@ async function sendMotivationWithSticker(botInstance) {
     }
 }
 
+async function sendTopParticipants(botInstance) {
+    const groupId = '120363153297388849@g.us'; // Sesuaikan dengan ID grup
+
+    // Urutkan berdasarkan jumlah chat
+    const sortedUsers = Object.entries(botInstance.chatCounter)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5); // Ambil 5 teratas
+
+    let message = "TOP 5 Mahasiswa Terbacot\n";
+    sortedUsers.forEach((user, index) => {
+        message += `${index + 1}. @${user[0].split('@')[0]} ngetik sebanyak ${user[1]} kali\n`;
+    });
+
+    // Kirim pesan dan tag nomor mahasiswa
+    await botInstance.client.sendMessage(groupId, message, {
+        mentions: sortedUsers.map(user => user[0])
+    });
+
+    // Reset counter setelah leaderboard dikirim
+    botInstance.chatCounter = {};
+}
+
+// Menjalankan setiap hari pada jam 9 malam
+function scheduleDailyLeaderboard(botInstance) {
+    const now = moment().tz('Asia/Jakarta');
+    const ninePM = moment().tz('Asia/Jakarta').set({ hour: 21, minute: 0, second: 0 });
+
+    const delay = ninePM.diff(now); // Berapa lama lagi sampai jam 9 malam
+
+    setTimeout(() => {
+        sendTopParticipants(botInstance);
+
+        // Ulangi setiap 24 jam
+        setInterval(() => {
+            sendTopParticipants(botInstance);
+        }, 86400000);
+    }, delay > 0 ? delay : 86400000 + delay); // Jika sekarang sudah lewat jam 9 malam, jalankan besok
+}
+
 
 module.exports = {
     loadAssignments,
     saveAssignments,
-    schedulePrayerNotifications,
     scheduleMotivationalQuotes,
     startAssignmentDeadlineCheck,
     scheduleTaskReminders,
     notifyOverdueAssignment,
     removeOverdueTasks,
     sendMotivationWithSticker,
+	scheduleDailyLeaderboard
 };

@@ -1,7 +1,6 @@
 const moment = require('moment-timezone');
 const { parseDate, translateWeatherCondition } = require('../utils/utils');
 const { notifyOverdueAssignment, sendMotivationWithSticker, removeOverdueTasks, loadAssignments, saveAssignments } = require('../reminders/reminders');
-const { getAcademicCalendar } = require('../commands/KalenderAkademik');
 const axios = require('axios');
 const { kataJorok } = require('../commands/kata');
 
@@ -21,6 +20,9 @@ async function handleMessage(message, botInstance) {
         await handleTaskDeletion(message, botInstance);
         return;
     }
+	
+trackParticipation(botInstance, message);
+
 
     switch (userState.stage) {
         case 0:
@@ -46,14 +48,34 @@ async function handleMessage(message, botInstance) {
 	// ngapus kata jorok
      if (containsBadWord(message.body)) {
         await botInstance.client.sendMessage(chatId, 'gak boleh kasar ya sayangku, nanti kak GEM cium nih😘 ah ah ah');
-        console.log(`[${moment().format('HH:mm:ss')}] Teguran dikirim karena kata tidak pantas.`);
 
         // Hapus pesan yang mengandung kata jorok
         try {
             await message.delete(true); // Menghapus pesan dari semua anggota grup
-            console.log(`[${moment().format('HH:mm:ss')}] Pesan dihapus karena mengandung kata tidak pantas.`);
         } catch (error) {
             console.error("Gagal menghapus pesan:", error.message);
+        }
+    }
+}
+
+	// Fungsi untuk mengecek apakah pesan dikirim antara jam 7 pagi sampai jam 9 malam
+function isWithinParticipationTime() {
+    const now = moment().tz('Asia/Jakarta');
+    const startTime = moment().tz('Asia/Jakarta').set({ hour: 7, minute: 0, second: 0 });
+    const endTime = moment().tz('Asia/Jakarta').set({ hour: 21, minute: 0, second: 0 });
+    return now.isBetween(startTime, endTime);
+}
+
+function trackParticipation(botInstance, message) {
+    const userId = message.author || message.from;
+    const botNumber = botInstance.client.info.wid._serialized;
+    const groupId = '120363153297388849@g.us'; 
+
+    if (userId !== botNumber && message.from === groupId && isWithinParticipationTime()) {
+        if (!botInstance.chatCounter[userId]) {
+            botInstance.chatCounter[userId] = 1;
+        } else {
+            botInstance.chatCounter[userId] += 1;
         }
     }
 }
@@ -81,15 +103,21 @@ async function handleInitialStage(message, userState, botInstance) {
             userState.stage = 4;
             userState.data = {}; // Reset data
             break;
-        case '!akademik':
-            await sendAcademicCalendar(message, botInstance);
-            break;
     }
 }
 
 async function handleTaskDeletion(message, botInstance) {
-    const input = message.body.trim(); // Menghapus spasi ekstra
-    const command = "!delete";
+    const input = message.body.trim();
+    const taskIndex = parseInt(input.replace('!delete', '').trim()) - 1;
+
+    if (isNaN(taskIndex) || taskIndex < 0 || taskIndex >= botInstance.assignments.length) {
+        message.reply('Nomor tugas tidak valid. Silakan coba lagi.');
+        return;
+    }
+
+    const removedTask = botInstance.assignments.splice(taskIndex, 1);
+    saveAssignments(botInstance);
+    message.reply(`🔔 ${removedTask[0].name} telah dihapus.`);
 }
 
 // Function to handle course selection
@@ -231,20 +259,6 @@ async function listAssignments(botInstance, message) {
             response += `${index + 1}. ${assignment.subject}\n   - Nama: ${assignment.name}\n   - Deadline: ${deadline.format('DD-MM-YYYY HH:mm')}\n\n`;
         });
         message.reply(response);
-    }
-}
-
-async function sendAcademicCalendar(message, botInstance) {
-    const events = await getAcademicCalendar();
-
-    if (events.length > 0) {
-        let response = '📅 Jadwal Akademik:\n\n';
-        events.forEach(event => {
-            response += `📌 ${event.kegiatan}\n🗓 ${event.tanggalAwal} - ${event.tanggalAkhir}\n📚 Semester: ${event.semester}\n👥 Penugasan: ${event.penugasan}\n\n`;
-        });
-        await botInstance.client.sendMessage(message.from, response);
-    } else {
-        await botInstance.client.sendMessage(message.from, 'Tidak ada data jadwal akademik yang tersedia.');
     }
 }
 
