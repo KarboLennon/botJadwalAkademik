@@ -23,7 +23,7 @@ function saveAssignments(botInstance) {
 async function notifyOverdueAssignment(botInstance, assignment) {
     try {
         const groupId = '120363153297388849@g.us';
-        await botInstance.client.sendMessage(groupId, `${assignment.subject}: ${assignment.name} udah lewat deadline bos, mampus yang belom ngerjain.`);
+        await botInstance.client.sendMessage(groupId, `${assignment.subject}: ${assignment.name} sudah melewati deadline, PAHAM !!!.`);
     } catch (error) {
         console.error(`Failed to send message for overdue task ${assignment.name}:`, error.message);
     }
@@ -136,12 +136,14 @@ async function sendTaskReminder(botInstance, assignment, daysBeforeDeadline) {
     }
 }
 
+let reminderIntervalId; // Variabel global untuk menyimpan ID interval
+
 function clearExistingIntervals() {
-    for (let i = 1; i < 10000; i++) {
-        clearInterval(i);
+    if (reminderIntervalId) {
+        clearInterval(reminderIntervalId);
+        reminderIntervalId = null; // Pastikan sudah tidak ada interval yang berjalan
     }
 }
-
 async function sendMotivationWithSticker(botInstance) {
     try {
         const randomQuote = kataKakGem[Math.floor(Math.random() * kataKakGem.length)];
@@ -195,6 +197,81 @@ function scheduleDailyLeaderboard(botInstance) {
     }, delay > 0 ? delay : 86400000 + delay); // Jika sekarang sudah lewat jam 9 malam, jalankan besok
 }
 
+let lastEarthquakeId = null; // Variabel untuk menyimpan gempa terakhir yang telah dikirim
+
+// Ambil data gempa terbaru dari BMKG
+async function fetchLatestEarthquake() {
+    try {
+        const response = await axios.get('https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json');
+        const earthquakeData = response.data.Infogempa.gempa;
+
+        // Variabel Gempa
+        const earthquakeId = earthquakeData.Shakemap;
+        const magnitude = earthquakeData.Magnitude;
+        const location = earthquakeData.Wilayah;
+        const depth = earthquakeData.Kedalaman;
+        const time = earthquakeData.Jam;
+        const date = earthquakeData.Tanggal;
+        const latitude = earthquakeData.Lintang;
+        const longitude = earthquakeData.Bujur;
+        const potential = earthquakeData.Potensi;
+
+        if (earthquakeId !== lastEarthquakeId) {
+            lastEarthquakeId = earthquakeId; 
+            return {
+                id: earthquakeId,
+                magnitude,
+                location,
+                depth,
+                time,
+                date,
+                latitude,
+                longitude,
+                potential
+            };
+        }
+
+        return null; 
+    } catch (error) {
+        console.error('Gagal mendapatkan data gempa dari BMKG:', error.message);
+        return null;
+    }
+}
+
+// Fungsi untuk mengirim notifikasi gempa
+async function sendEarthquakeNotification(botInstance) {
+    const groupId = '120363153297388849@g.us'; // Ganti dengan ID grup yang sesuai
+    const earthquake = await fetchLatestEarthquake();
+
+    if (earthquake) {
+        // Format pesan notifikasi
+        const message = `
+🌍 *Ada Gempa Coyyy, PAHAM !* 🌍
+Tanggal: ${earthquake.date}
+Waktu: ${earthquake.time} WIB
+Magnitude: ${earthquake.magnitude}
+Kedalaman: ${earthquake.depth}
+Lokasi: ${earthquake.location}
+Lintang: ${earthquake.latitude}
+Bujur: ${earthquake.longitude}
+Potensi: ${earthquake.potential || 'Tidak ada'}
+        `;
+
+        try {
+            await botInstance.client.sendMessage(groupId, message);
+            console.log(`[${moment().format('HH:mm:ss')}] Notifikasi gempa terkirim`);
+        } catch (error) {
+            console.error('Gagal mengirim notifikasi gempa:', error.message);
+        }
+    }
+}
+
+// Fungsi untuk mengecek gempa secara berkala (misalnya setiap 5 menit)
+function scheduleEarthquakeCheck(botInstance) {
+    setInterval(() => {
+        sendEarthquakeNotification(botInstance);
+    }, 5 * 60 * 1000); // Cek setiap 5 menit
+}
 
 module.exports = {
     loadAssignments,
@@ -205,5 +282,6 @@ module.exports = {
     notifyOverdueAssignment,
     removeOverdueTasks,
     sendMotivationWithSticker,
-	scheduleDailyLeaderboard
+	scheduleDailyLeaderboard,
+	scheduleEarthquakeCheck
 };

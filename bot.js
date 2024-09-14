@@ -1,6 +1,6 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const { initializeClient } = require('./src/config/client');
-const { saveAssignments, loadAssignments, scheduleTaskReminders, scheduleMotivationalQuotes, startAssignmentDeadlineCheck, scheduleDailyLeaderboard } = require('./src/reminders/reminders');
+const { saveAssignments, loadAssignments, scheduleTaskReminders, scheduleMotivationalQuotes, startAssignmentDeadlineCheck, scheduleDailyLeaderboard, scheduleEarthquakeCheck } = require('./src/reminders/reminders');
 const { getWeather, handleMessage } = require('./src/commands/handlers');
 const { scheduleClassReminders } = require('./src/reminders/jadwal');
 
@@ -70,6 +70,9 @@ class WhatsAppBot {
     scheduleDailyLeaderboard() {
         scheduleDailyLeaderboard(this);
     }
+	scheduleEarthquakeCheck() {
+		scheduleEarthquakeCheck(this);
+	}
 }
 
 // Mulai bot
