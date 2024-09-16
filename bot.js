@@ -13,11 +13,11 @@ class WhatsAppBot {
         this.assignments = [];
         this.courses = [
             '👨‍💻 Struktur Data',
-			'📈 Statistika dan Probabilitas',
-			'🌐 Jaringan Komputer',
+            '📈 Statistika dan Probabilitas',
+            '🌐 Jaringan Komputer',
             '📊 Graph Terapan',
-			'📁 Sistem Berkas',
-			'📐 Aljabar Linier dan Matriks',
+            '📁 Sistem Berkas',
+            '📐 Aljabar Linier dan Matriks',
             '💻 Algoritma dan Pemrograman 2',
             '🧮 Matematika Diskrit',
             '🔔 Info Penting'
@@ -39,9 +39,10 @@ class WhatsAppBot {
 
         // Jadwalkan leaderboard harian
         this.scheduleDailyLeaderboard();
+
+        // Jadwalkan pengecekan gempa
+        this.scheduleEarthquakeCheck(); // Tambahkan pemanggilan ini
     }
-
-
 
     saveAssignments() {
         saveAssignments(this);
@@ -70,10 +71,12 @@ class WhatsAppBot {
     scheduleDailyLeaderboard() {
         scheduleDailyLeaderboard(this);
     }
-	scheduleEarthquakeCheck() {
-		scheduleEarthquakeCheck(this);
-	}
+
+    scheduleEarthquakeCheck() {
+        scheduleEarthquakeCheck(this);
+    }
 }
 
 // Mulai bot
 new WhatsAppBot();
+

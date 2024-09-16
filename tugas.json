@@ -1,7 +1,22 @@
 [
   {
+    "subject": "💻 Algoritma dan Pemrograman 2",
+    "name": "E-Learning Pertemuan 3",
+    "deadline": "2024-09-20T16:59:00.000Z"
+  },
+  {
+    "subject": "👨‍💻 Struktur Data",
+    "name": "E-Learning pertemuan 2 & 3",
+    "deadline": "2024-09-20T16:59:00.000Z"
+  },
+  {
     "subject": "📈 Statistika dan Probabilitas",
-    "name": "Rangkum tentang pertemuan 1 , meliputi statistik & statistika, dan 5 komponen prosesnya, di upload ke LMS",
-    "deadline": "2024-09-14T16:59:00.000Z"
+    "name": "E-Learning Pertemuan 2-3",
+    "deadline": "2024-09-20T16:59:00.000Z"
+  },
+  {
+    "subject": "🌐 Jaringan Komputer",
+    "name": "E-Learning pertemuan 3",
+    "deadline": "2024-09-20T16:59:00.000Z"
   }
 ]

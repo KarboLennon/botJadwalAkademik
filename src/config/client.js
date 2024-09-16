@@ -25,10 +25,13 @@ function initializeClient(client, botInstance) {
         env: 'node'           // tentukan lingkungan (node atau browser)
     });
 
+    // Menampilkan QR Code untuk login
     client.on('qr', qr => {
         qrcode.generate(qr, { small: true });
+        console.log('QR Code ditampilkan, silakan scan dengan aplikasi WhatsApp.');
     });
 
+    // Saat client siap
     client.on('ready', () => {
         console.log('Bot Kak GEM sudah berjalan, PAHAM!...');
         botInstance.loadAssignments();
@@ -36,14 +39,33 @@ function initializeClient(client, botInstance) {
         botInstance.scheduleMotivationalQuotes();
     });
 
-    client.on('disconnected', () => {
-        console.log('Client disconnected. Attempting to reconnect...');
+    // Saat client terputus
+    client.on('disconnected', (reason) => {
+        console.log(`Client disconnected. Reason: ${reason}`);
+        console.log('Attempting to reconnect...');
         client.initialize();
     });
 
-    client.on('message', message => handleMessage(message, botInstance));
+    // Mendeteksi pesan masuk tanpa ID grup
+    client.on('message', async (message) => {
+        try {
+            const chat = await message.getChat();
+            
+            // Cek apakah pesan berasal dari grup, tanpa menampilkan ID grup
+            if (chat.isGroup) {
+                console.log('Pesan diterima dari grup:', chat.name);  // Menampilkan nama grup di console
+            } else {
+                console.log('Pesan diterima dari kontak pribadi.');
+            }
+        } catch (error) {
+            console.error('Error saat mencoba mendapatkan informasi chat:', error);
+        }
 
-    client.initialize();
+        // Panggil handler pesan
+        handleMessage(message, botInstance);
+    });
+
+    client.initialize(); // Inisialisasi client
 }
 
 module.exports = { initializeClient };
