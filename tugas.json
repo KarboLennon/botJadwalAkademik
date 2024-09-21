@@ -1,22 +1,17 @@
 [
   {
-    "subject": "💻 Algoritma dan Pemrograman 2",
-    "name": "E-Learning Pertemuan 3",
-    "deadline": "2024-09-20T16:59:00.000Z"
-  },
-  {
-    "subject": "👨‍💻 Struktur Data",
-    "name": "E-Learning pertemuan 2 & 3",
-    "deadline": "2024-09-20T16:59:00.000Z"
-  },
-  {
-    "subject": "📈 Statistika dan Probabilitas",
-    "name": "E-Learning Pertemuan 2-3",
-    "deadline": "2024-09-20T16:59:00.000Z"
-  },
-  {
     "subject": "🌐 Jaringan Komputer",
-    "name": "E-Learning pertemuan 3",
-    "deadline": "2024-09-20T16:59:00.000Z"
+    "name": "bikin topologi bus,star,ring,tree dan mesh, terus harus bisa di PING antara 1 komputer ke komputer lain, minggu depan dikasih liat",
+    "deadline": "2024-09-24T11:30:00.000Z"
+  },
+  {
+    "subject": "📐 Aljabar Linier dan Matriks",
+    "name": "kumpulin di e-learning tugas terstruktur pertemuan 2, soal disini >>> https://imgur.com/a/J2QPAmu",
+    "deadline": "2024-09-22T16:59:00.000Z"
+  },
+  {
+    "subject": "💻 Algoritma dan Pemrograman 2",
+    "name": "Bikin Program C++ dari gambar ini : https://imgur.com/a/1C8XUxs\n\nKumpulkan ke LMS tugas terstruktur 2",
+    "deadline": "2024-09-25T16:59:00.000Z"
   }
 ]

@@ -53,8 +53,14 @@ const nama = [
     "Adam", "Ade", "Upho", "Bunga", "Ainun", "Madun", "Bagus", "Bayu", "Bintang",
     "Aji", "Endri", "Salim", "Baim", "Ivana", "Jajang", "Irul", "Leo", "Ali",
     "Naufal", "Farhan", "Nurul", "Ikbal", "Iza", "Rafi", "Alam", "Rama", "Iky",
-    "Timothi", "Yohan", "Doy", "Afari", "Adit", "Very", "Dhea", "Elsa", "Wisnu", "Ammar", "Riska", "Nanda", "Baqir"
+    "Timothi", "Yohan", "Doy", "Afari", "Adit", "Very", "Dhea", "Elsa", "Wisnu", "Ammar", "Riska", "Baqir", "Khansa"
 ];
+
+const emotBinatang  = [
+    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆", "🦉", "🦇", "🐺", "🐗", 
+    "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜", "🦟", "🦗", "🐢", "🐍", "🦎", "🦂", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🦈", "🐊", "🐅", "🐆"
+];
+
 const kataKakGem = [
     "Kata-kata hari ini, Tetap semangat, perjalanan panjang dimulai dari langkah kecil.",
     "Kata-kata hari ini, Jangan menyerah, kesuksesan membutuhkan ketekunan.",
@@ -112,4 +118,4 @@ const kataJorok = ['anjing', 'kontol', 'memek', 'bangsat', 'tai', 'ngentot', 'ng
 'k0ntol','kont0l','memeg','memex','muemek','tolol','m3m3k','jembut','jembot'];
 
 
-module.exports = { kataMotivasi, nama, kataKakGem, kataJorok };
+module.exports = { kataMotivasi, nama, kataKakGem, kataJorok, emotBinatang };

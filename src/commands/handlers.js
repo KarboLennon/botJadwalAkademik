@@ -21,8 +21,7 @@ async function handleMessage(message, botInstance) {
         return;
     }
 	
-trackParticipation(botInstance, message);
-
+    trackParticipation(botInstance, message);
 
     switch (userState.stage) {
         case 0:
@@ -45,9 +44,11 @@ trackParticipation(botInstance, message);
             message.reply('Terjadi kesalahan. Mulai dari awal dengan mengetikkan !add');
             break;
     }
-	// ngapus kata jorok
-     if (containsBadWord(message.body)) {
-        await botInstance.client.sendMessage(chatId, 'gak boleh kasar ya sayangku, nanti kak GEM cium nih😘 ah ah ah');
+
+    // Cek apakah ada kata jorok
+    if (containsBadWord(message.body)) {
+        const response = getRandomResponse(); // Ambil respons secara acak
+        await botInstance.client.sendMessage(chatId, response);
 
         // Hapus pesan yang mengandung kata jorok
         try {
@@ -58,7 +59,7 @@ trackParticipation(botInstance, message);
     }
 }
 
-	// Fungsi untuk mengecek apakah pesan dikirim antara jam 7 pagi sampai jam 9 malam
+// Fungsi untuk mengecek apakah pesan dikirim antara jam 7 pagi sampai jam 9 malam
 function isWithinParticipationTime() {
     const now = moment().tz('Asia/Jakarta');
     const startTime = moment().tz('Asia/Jakarta').set({ hour: 7, minute: 0, second: 0 });
@@ -182,7 +183,7 @@ async function handleKelompokInput(message, userState, botInstance) {
     }
 
     if (!userState.data.participants) {
-        if (input <= 0 || input > 36) {
+        if (input <= 0 || input > 50) {
             message.reply('Jumlah peserta kebanyakan.');
             botInstance.userStates[message.from] = { stage: 0, data: {} }; // stop proses
             return;
@@ -190,7 +191,7 @@ async function handleKelompokInput(message, userState, botInstance) {
         userState.data.participants = input;
         message.reply('Masukkan jumlah kelompok:');
     } else if (!userState.data.groups) {
-        if (input <= 0 || input > 20 || input > userState.data.participants) {
+        if (input <= 0 || input > 25 || input > userState.data.participants) {
             message.reply('Jumlah kelompok tidak masuk akal, silahkan ulangi.');
             botInstance.userStates[message.from] = { stage: 0, data: {} }; // Reset state and stop process
             return;
@@ -198,12 +199,14 @@ async function handleKelompokInput(message, userState, botInstance) {
         userState.data.groups = input;
 
         const groupAssignments = createGroups(userState.data.participants, userState.data.groups);
-        const icons = [
-            '🐱', '🐶', '🦁', '🐯', '🐰', '🐸', '🐼', '🐻', '🐷', '🐨',
-            '🦄', '🐥', '🐉', '🐳', '🐙', '🐊', '🐧', '🦋', '🐢', '🐍',
-            '🐸', '🐲', '🐎', '🐏', '🐑', '🐪', '🐫', '🐘', '🦏', '🦍',
-            '🦒', '🦓', '🦔', '🦦', '🦧', '🦥'
-        ];
+       const icons = [
+    '🐱', '🐶', '🦁', '🐯', '🐰', '🐸', '🐼', '🐻', '🐷', '🐨',
+    '🦄', '🐥', '🐉', '🐳', '🐙', '🐊', '🐧', '🦋', '🐢', '🐍',
+    '🐸', '🐲', '🐎', '🐏', '🐑', '🐪', '🐫', '🐘', '🦏', '🦍',
+    '🦒', '🦓', '🦔', '🦦', '🦧', '🦥', '🦘', '🦨', '🦩', '🦇',
+    '🦅', '🦆', '🦉', '🦢', '🦡', '🦈', '🦑', '🐙', '🐡', '🐠'
+];
+
 
         // Randomize icon assignment
         shuffleArray(icons);
@@ -241,7 +244,7 @@ function createGroups(participants, groups) {
     return groupAssignments;
 }
 
-// mengacak array menggunakan algoritma Fisher-Yates
+// Mengacak array menggunakan algoritma Fisher-Yates
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -249,18 +252,61 @@ function shuffleArray(array) {
     }
 }
 
+// Fungsi untuk mengecek apakah ada kata jorok
+function containsBadWord(message) {
+    const lowercasedMessage = message.toLowerCase();
+    return kataJorok.some(badWord => {
+        // Membuat regex dengan pelindung kata dan fleksibilitas yang lebih tinggi untuk huruf yang berulang
+        const pattern = '\\b' + badWord
+            .split('')
+            .map(char => `${char}+[^a-zA-Z0-9]*`)
+            .join('') + '\\b';
+        const regex = new RegExp(pattern, 'gi');
+        return regex.test(lowercasedMessage);
+    });
+}
+
+// Tambahkan array respons untuk kata jorok
+const responses = [
+    'gak boleh kasar ya sayangku, nanti kak GEM cium nih😘 ah ah ah',
+    'Jangan ngomong kasar ya, nanti kena peluk manja dari kak GEM! 🤗',
+    'Di ajarin adab ga? Nanti kak GEM cubit sayang nih 🤭',
+    'Bahasa kasarmu bikin kak GEM sedih, coba lebih sopan ya! 😘',
+    'Sayang, jangan kasar ya 😘 nanti kak GEM cubit pipi kamu!',
+];
+
+// Pilih respons secara acak
+function getRandomResponse() {
+    const randomIndex = Math.floor(Math.random() * responses.length);
+    return responses[randomIndex];
+}
+
 async function listAssignments(botInstance, message) {
     if (botInstance.assignments.length === 0) {
         message.reply('Tidak ada tugas yang terdaftar.');
     } else {
+		moment.locale('id'); 
         let response = '📋 Daftar Tugas:\n\n';
         botInstance.assignments.forEach((assignment, index) => {
             const deadline = moment(assignment.deadline).tz('Asia/Jakarta'); // Pastikan timezone benar
-            response += `${index + 1}. ${assignment.subject}\n   - Nama: ${assignment.name}\n   - Deadline: ${deadline.format('DD-MM-YYYY HH:mm')}\n\n`;
+            const today = moment().tz('Asia/Jakarta');
+            const daysDifference = deadline.diff(today, 'days');
+            
+            let deadlineDescription = deadline.format('dddd, DD-MM-YYYY HH:mm'); // Nama hari + format tanggal
+            
+            if (daysDifference === 1) {
+                deadlineDescription += ' (besok)';
+            } else if (daysDifference > 1) {
+                deadlineDescription += ` (${daysDifference} hari lagi)`;
+            }
+
+            response += `${index + 1}. 💻 ${assignment.subject}\n   - Nama: ${assignment.name}\n   - Deadline: ${deadlineDescription}\n\n`;
         });
         message.reply(response);
     }
 }
+
+
 
 async function getWeather() {
     try {
@@ -281,18 +327,6 @@ async function getWeather() {
         console.error('Failed to get weather data:', error.message);
         return 'Gagal mendapatkan data cuaca.';
     }
-}
-function containsBadWord(message) {
-    const lowercasedMessage = message.toLowerCase();
-    return kataJorok.some(badWord => {
-        // Membuat regex dengan pelindung kata dan fleksibilitas yang lebih tinggi untuk huruf yang berulang
-        const pattern = '\\b' + badWord
-            .split('')
-            .map(char => `${char}+[^a-zA-Z0-9]*`)
-            .join('') + '\\b';
-        const regex = new RegExp(pattern, 'gi');
-        return regex.test(lowercasedMessage);
-    });
 }
 
 module.exports = { handleMessage, sendMotivationWithSticker, listAssignments, removeOverdueTasks, getWeather };
