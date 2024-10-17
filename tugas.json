@@ -1,17 +1,27 @@
 [
   {
+    "subject": "🔔 Info Penting",
+    "name": "E-Learning 3 SKS pertemuan 9",
+    "deadline": "2024-10-18T16:59:00.000Z"
+  },
+  {
     "subject": "🌐 Jaringan Komputer",
-    "name": "bikin topologi bus,star,ring,tree dan mesh, terus harus bisa di PING antara 1 komputer ke komputer lain, minggu depan dikasih liat",
-    "deadline": "2024-09-24T11:30:00.000Z"
+    "name": "Kerjain : \n1. https://drive.google.com/file/d/1F42M_k_VH-8tAjatnvQ-Ht1W7uJYJwKa/view?usp=drivesdk\n\n2. Modul pertemuan 9\nkumpulin ke LMS pertemuan 9 dijadiin 1 PDF",
+    "deadline": "2024-10-18T16:59:00.000Z"
   },
   {
-    "subject": "📐 Aljabar Linier dan Matriks",
-    "name": "kumpulin di e-learning tugas terstruktur pertemuan 2, soal disini >>> https://imgur.com/a/J2QPAmu",
-    "deadline": "2024-09-22T16:59:00.000Z"
+    "subject": "👨‍💻 Struktur Data",
+    "name": "Kerjain : https://drive.google.com/file/d/1AzfWGfbktl1fJgI5UAHqPT6FeOES5gNR/view?usp=drivesdk \n\nKumpulin ke Tugas Terstruktur 8",
+    "deadline": "2024-10-18T16:59:00.000Z"
   },
   {
-    "subject": "💻 Algoritma dan Pemrograman 2",
-    "name": "Bikin Program C++ dari gambar ini : https://imgur.com/a/1C8XUxs\n\nKumpulkan ke LMS tugas terstruktur 2",
-    "deadline": "2024-09-25T16:59:00.000Z"
+    "subject": "📁 Sistem Berkas",
+    "name": "cari Contoh Penerapan Organisasi Berkas Dengan Banyak Kunci , minimal ada 5 user, selain banking",
+    "deadline": "2024-10-23T11:30:00.000Z"
+  },
+  {
+    "subject": "🔔 Info Penting",
+    "name": "UTS - Jangan lupa belajar, jangan maen mulu, kuliah tuh cari ilmu",
+    "deadline": "2024-10-28T11:20:00.000Z"
   }
 ]

@@ -104,8 +104,26 @@ async function handleInitialStage(message, userState, botInstance) {
             userState.stage = 4;
             userState.data = {}; // Reset data
             break;
+        case '!menu': // Menambahkan case untuk command !menu
+            message.reply(getRandomMenuResponse());
+            break;
     }
 }
+
+// Fungsi untuk menghasilkan balasan menu secara acak
+function getRandomMenuResponse() {
+    const menuResponses = [
+        '📋 *Menu Utama Kakak:*\n\n1. `!add` – Nambah tugas dan deadline baru.\n2. `!list` – Liat tugas-tugas yang belum kelar.\n3. `!delete` – Hapus tugas yang gak dibutuhin.\n4. `!kelompok` – Bagi kelompok random! Siap-siap jadi team solid.\n5. `!cuaca` – Cek cuaca di UNPAM, biar gak salah kostum.\n6. `!paham` – Kak GEM hadir buat kasih semangat!',
+        '🌟 *Ada apa hari ini?* 🌟\n\n1. `!add` – Mau tambahin tugas? Ini dia!\n2. `!list` – List tugas menanti kamu.\n3. `!delete` – Tugas sudah beres? Hapus dong.\n4. `!kelompok` – Randomize kelompok dengan seru.\n5. `!cuaca` – Info cuaca terkini di UNPAM, jangan sampe kehujanan.\n6. `!paham` – Dapet semangat dari Kak GEM!',
+        '🎯 *Perintah Yang Bisa Dilakukan:* 🎯\n\n1. `!add` – Tambah tugas plus deadline.\n2. `!list` – Cek daftar tugas yang ada.\n3. `!delete` – Hapus tugas yang udah selesai.\n4. `!kelompok` – Bagi kelompok secara random!\n5. `!cuaca` – Cek cuaca UNPAM.\n6. `!paham` – Dengerin Kak GEM kasih motivasi!',
+        '🔔 *Ini Daftar Perintah Kamu!* 🔔\n\n1. `!add` – Tambah tugas dengan deadline.\n2. `!list` – Liat daftar tugas kamu.\n3. `!delete` – Hapus tugas yang udah gak dibutuhin.\n4. `!kelompok` – Bagi kelompok secara acak.\n5. `!cuaca` – Cek kondisi cuaca di UNPAM.\n6. `!paham` – Mendapatkan dukungan penuh dari Kak GEM!',
+        '🚀 *Pilihan Aksi untuk Kamu!* 🚀\n\n1. `!add` – Tambah tugas baru.\n2. `!list` – Lihat daftar tugas.\n3. `!delete` – Hapus tugas lama.\n4. `!kelompok` – Bagi kelompok random!\n5. `!cuaca` – Cek cuaca di UNPAM.\n6. `!paham` – Dapet dukungan manis dari Kak GEM!'
+    ];
+
+    const randomIndex = Math.floor(Math.random() * menuResponses.length);
+    return menuResponses[randomIndex];
+}
+
 
 async function handleTaskDeletion(message, botInstance) {
     const input = message.body.trim();
@@ -283,28 +301,39 @@ function getRandomResponse() {
 
 async function listAssignments(botInstance, message) {
     if (botInstance.assignments.length === 0) {
-        message.reply('Tidak ada tugas yang terdaftar.');
+        message.reply('Alhamdulillah ga ada tugas.');
     } else {
-		moment.locale('id'); 
-        let response = '📋 Daftar Tugas:\n\n';
-        botInstance.assignments.forEach((assignment, index) => {
-            const deadline = moment(assignment.deadline).tz('Asia/Jakarta'); // Pastikan timezone benar
+        moment.locale('id');
+        
+        // Mengurutkan tugas berdasarkan deadline terdekat
+        const sortedAssignments = botInstance.assignments.sort((a, b) => {
+            const deadlineA = moment(a.deadline).tz('Asia/Jakarta');
+            const deadlineB = moment(b.deadline).tz('Asia/Jakarta');
+            return deadlineA.diff(deadlineB); // Urutkan dari terdekat ke terjauh
+        });
+
+        let response = '📋 Daftar Tugas :\n\n';
+        sortedAssignments.forEach((assignment, index) => {
+            const deadline = moment(assignment.deadline).tz('Asia/Jakarta');
             const today = moment().tz('Asia/Jakarta');
             const daysDifference = deadline.diff(today, 'days');
-            
+
             let deadlineDescription = deadline.format('dddd, DD-MM-YYYY HH:mm'); // Nama hari + format tanggal
-            
-            if (daysDifference === 1) {
+
+            if (daysDifference === 0) {
+                deadlineDescription += ' (hari ini)';
+            } else if (daysDifference === 1) {
                 deadlineDescription += ' (besok)';
             } else if (daysDifference > 1) {
                 deadlineDescription += ` (${daysDifference} hari lagi)`;
             }
 
-            response += `${index + 1}. 💻 ${assignment.subject}\n   - Nama: ${assignment.name}\n   - Deadline: ${deadlineDescription}\n\n`;
+            response += `${index + 1}. ${assignment.subject}\n   - Nama: ${assignment.name}\n   - Deadline: ${deadlineDescription}\n\n`;
         });
         message.reply(response);
     }
 }
+
 
 
 

@@ -3,6 +3,7 @@ const fs = require('fs');
 const axios = require('axios');
 const path = require('path');
 const sharp = require('sharp');
+const schedule = require('node-schedule'); // Untuk jadwal panjang
 const { MessageMedia } = require('whatsapp-web.js');
 const { kataMotivasi, nama, kataKakGem, emotBinatang } = require('../commands/kata');
 
@@ -10,7 +11,6 @@ const { kataMotivasi, nama, kataKakGem, emotBinatang } = require('../commands/ka
 const scheduledReminders = new Map();
 const sentReminders = new Map();
 let intervalId; // Variabel global untuk interval motivasi
-let reminderIntervalId; // Variabel global untuk interval pengingat
 
 function loadAssignments(botInstance) {
     const filePath = 'tugas.json';
@@ -34,7 +34,7 @@ async function notifyOverdueAssignments(botInstance, overdueAssignments) {
             '120363173834437383@g.us'  // Grup 2
         ];
 
-        let overdueMessage = `🚨 *Kak GEM kasih tahu* 🚨\nTugas berikut sudah melewati deadline:\n\n`;
+        let overdueMessage = `🚨 *Deadline Tugas Berakhir* 🚨\nTugas berikut sudah melewati deadline:\n\n`;
 
         overdueAssignments.forEach(assignment => {
             const deadlineFormatted = moment(assignment.deadline).format('DD-MM-YYYY HH:mm');
@@ -65,7 +65,7 @@ function removeOverdueTasks(botInstance) {
 
     botInstance.assignments = botInstance.assignments.filter(assignment => {
         const deadline = moment(assignment.deadline);
-        if (deadline.isSameOrBefore(now)) {
+        if (deadline.isValid() && deadline.isSameOrBefore(now)) {
             overdueAssignments.push(assignment); // Simpan ke dalam array tugas yang sudah lewat deadline
             return false; // Hapus dari daftar tugas aktif
         }
@@ -105,53 +105,34 @@ function scheduleTaskReminders(botInstance) {
                 const reminderDelay = reminderTime.diff(now);
 
                 if (reminderDelay > 0) {
-                    const reminderKey = `${deadline}-${i}`; // Buat key unik untuk setiap pengingat
+                    const reminderKey = `${deadline}-${i}-${tasks.map(t => t.name).join('-')}`; // Key unik
 
                     // Hanya kirim pengingat jika belum dikirim
                     if (!sentReminders.has(reminderKey)) {
-                        if (reminderDelay > 0x7FFFFFFF) {
-                            scheduleLongTimeout(() => {
-                                sendGroupedTaskReminder(botInstance, tasks, i, deadlineMoment);
-                                sentReminders.set(reminderKey, true); // Tandai pengingat sudah dikirim
-                            }, reminderDelay);
-                        } else {
-                            setTimeout(() => {
-                                sendGroupedTaskReminder(botInstance, tasks, i, deadlineMoment);
-                                sentReminders.set(reminderKey, true); // Tandai pengingat sudah dikirim
-                            }, reminderDelay);
-                        }
+                        const job = schedule.scheduleJob(reminderTime.toDate(), () => {
+                            sendGroupedTaskReminder(botInstance, tasks, i, deadlineMoment);
+                            sentReminders.set(reminderKey, true); // Tandai pengingat sudah dikirim
+                        });
+
+                        scheduledReminders.set(reminderKey, job); // Simpan job untuk referensi
                     }
                 }
             }
-            scheduledReminders.set(deadline, true); // Tandai tugas sudah dijadwalkan
         }
-    }
-}
-
-// Fungsi untuk pengaturan timeout panjang
-function scheduleLongTimeout(callback, delay) {
-    if (delay > 0x7FFFFFFF) {
-        setTimeout(() => {
-            scheduleLongTimeout(callback, delay - 0x7FFFFFFF);
-        }, 0x7FFFFFFF);
-    } else {
-        setTimeout(callback, delay);
     }
 }
 
 // Fungsi untuk mengirimkan pengingat tugas
 async function sendGroupedTaskReminder(botInstance, tasks, daysBeforeDeadline, deadlineMoment) {
     try {
+        moment.locale('id');
         const groupIds = [
             '120363153297388849@g.us', // Grup 1
             '120363173834437383@g.us'  // Grup 2
         ];
 
-        // Setel locale ke bahasa Indonesia untuk nama hari
-        moment.locale('id');
-
         const daysMessage = daysBeforeDeadline === 1 ? 'besok' : `${daysBeforeDeadline} hari lagi`;
-        const deadlineFormatted = deadlineMoment.format('dddd, DD-MM-YYYY HH:mm'); // Format hari dalam bahasa Indonesia
+        const deadlineFormatted = deadlineMoment.format('dddd, DD-MM-YYYY HH:mm');
 
         let taskList = `🚨 *Kak GEM kasih ingat* 🚨\nJangan lupa kerjain tugasnya:\n\n`;
 
@@ -169,7 +150,6 @@ async function sendGroupedTaskReminder(botInstance, tasks, daysBeforeDeadline, d
         console.error(`Failed to send reminder for tasks:`, error.message);
     }
 }
-
 
 // Fungsi untuk mengirim motivasi dengan stiker
 async function sendMotivationWithSticker(botInstance) {
@@ -266,6 +246,32 @@ function scheduleDailyLeaderboard(botInstance) {
         }, 86400000); // Ulangi setiap 24 jam
     }, delay > 0 ? delay : 86400000 + delay);
 }
+//ambil informasi gempa
+async function fetchLatestEarthquake() {
+    try {
+        const response = await axios.get('https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json');
+        const data = response.data.Infogempa.gempa;
+
+        // Ambil data gempa terbaru
+        const earthquake = {
+            date: data.Tanggal,
+            time: data.Jam,
+            magnitude: data.Magnitude,
+            depth: data.Kedalaman,
+            location: data.Wilayah,
+            potential: data.Potensi || 'Tidak ada',
+            id: data.Shakemap // Jika kamu ingin menggunakan gambar peta guncangan (shakemap)
+        };
+
+        return earthquake;
+    } catch (error) {
+        console.error('Error fetching earthquake data:', error.message);
+        return null;
+    }
+}
+
+// Mengirim notifikasi gempa
+let lastEarthquake = null; // Variabel global untuk menyimpan gempa terakhir
 
 // Mengirim notifikasi gempa
 async function sendEarthquakeNotification(botInstance) {
@@ -273,6 +279,19 @@ async function sendEarthquakeNotification(botInstance) {
     const earthquake = await fetchLatestEarthquake();
 
     if (earthquake) {
+        // Cek apakah gempa terbaru sama dengan gempa sebelumnya
+        if (lastEarthquake && lastEarthquake.date === earthquake.date &&
+            lastEarthquake.time === earthquake.time &&
+            lastEarthquake.magnitude === earthquake.magnitude &&
+            lastEarthquake.depth === earthquake.depth &&
+            lastEarthquake.location === earthquake.location) {
+            console.log('Gempa sudah dikirim sebelumnya, tidak mengirim notifikasi ulang.');
+            return; // Tidak kirim notifikasi ulang jika data sama
+        }
+
+        // Simpan data gempa terbaru sebagai lastEarthquake
+        lastEarthquake = earthquake;
+
         if (parseFloat(earthquake.magnitude) >= 4.5) {
             const message = `
 🌍 *BMKGEM Melaporkan!* 🌍
@@ -320,6 +339,7 @@ Potensi: ${earthquake.potential || 'Tidak ada'}
     }
 }
 
+
 // Mengecek gempa setiap 5 menit
 function scheduleEarthquakeCheck(botInstance) {
     setInterval(() => {
@@ -329,11 +349,9 @@ function scheduleEarthquakeCheck(botInstance) {
 
 // Menghapus interval pengingat sebelumnya
 function clearExistingIntervals() {
-    if (reminderIntervalId) {
-        clearInterval(reminderIntervalId);
-        reminderIntervalId = null; // Pastikan interval direset
-    }
-    scheduledReminders.clear(); // Hapus semua pengingat yang dijadwalkan sebelumnya
+    // Hentikan pengingat tugas
+    scheduledReminders.forEach((job) => job.cancel());
+    scheduledReminders.clear();
 }
 
 // Ekspor fungsi
